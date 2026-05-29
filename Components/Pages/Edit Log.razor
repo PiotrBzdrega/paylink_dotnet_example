@@ -1,0 +1,74 @@
+﻿@page "/editlog"
+@using Models
+@using Clients
+@inject MessagesClient Client
+@inject LevelClient levelClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>New Log</PageTitle>
+
+<h3>Edit_Log</h3>
+
+@if (levels is null)
+{
+  <p><em>Loading ...</em></p>
+}
+else
+{
+  <div class="row">
+    <div class="col-md-6">
+      <EditForm Model="@log" FormName="editLog" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="mb-3">
+          <label for="msg" class="form-label">Message:</label>
+          <InputText id="msg" @bind-Value="log.Message" class="form-control" />
+          <ValidationMessage For="() => log.Message" />
+        </div>
+        <div class="mb-3">
+          <label for="level" class="form-label">Level:</label>
+          <InputSelect id="level" @bind-Value="log.LevelId" class="form-select">
+            <option value="">Select a level</option>
+            @foreach (var lvl in levels)
+            {
+              <option value="@lvl.Id">@lvl.Name</option>
+            }
+          </InputSelect>
+          <ValidationMessage For="() => log.LevelId" />
+        </div>
+        <div class="mb-3">
+          <label for="timestamp" class="form-label">TimeStamp:</label>
+          <InputDate id="timestamp" @bind-Value="log.Timestamp" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary"> Submit </button>
+        <a role="button" class="btn btn-secondary" href="/">Cancel</a>
+      </EditForm>
+    </div>
+  </div>
+}
+@code {
+
+  [SupplyParameterFromForm]
+  private MessageDetails? log { get; set; } = new()
+  {
+    Timestamp = DateTime.UtcNow,
+    Message = string.Empty,
+    LevelId = string.Empty
+  };
+
+  @* private LevelClient levelClient = new(); *@
+  @* private MessagesClient msgClient = new(); *@
+
+  private MessageLevel[]? levels;
+
+  protected override void OnInitialized()
+  {
+    levels = levelClient.GetMessageLevel();
+  }
+
+  private void HandleSubmit()
+  {
+    Client.AddMessage((log));
+    NavigationManager.NavigateTo("/");
+  }
+}

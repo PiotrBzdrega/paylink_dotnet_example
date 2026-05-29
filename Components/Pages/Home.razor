@@ -1,0 +1,71 @@
+﻿@page "/"
+@using Models
+@using Clients
+@inject MessagesClient Client
+
+<PageTitle>Home</PageTitle>
+
+<div class="mt-2">
+    <a class="btn btn-primary" role="button" href="/editlog">New Log</a>
+    <a class="btn btn-primary" role="button" href="/paylink">Paylink</a>
+</div>
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<p class="mb-3">
+    <a href="#" class="btn" role="button" data-bs-toggle="button">Toggle link</a>
+    <a href="#" class="btn active" role="button" data-bs-toggle="button" aria-pressed="true"
+       @* @onclick="ToggleLoading" *@>Active toggle link</a>
+    <a class="btn disabled" aria-disabled="true" role="button" data-bs-toggle="button">Disabled toggle link</a>
+</p>
+
+@if (logs is null)
+{
+    <p><em>Loading ...</em></p>
+}
+else
+{
+    <table class="table table-stripped table-boarded table-hover mt-5">
+        <thead class="table-dark">
+            <th>Timestamp</th>
+            <th>Message</th>
+            <th>Level</th>
+        </thead>
+        <tbody>
+            @foreach (var log in logs)
+            {
+                <tr>
+                    <td> @log.Timestamp</td>
+                    <td> @log.Message</td>
+                    <td> @log.Level</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    @*Does not work yet *@
+    private void ToggleLoading()
+    {
+        if (logs is null)
+        {
+            logs = Client.GetMessages();
+        }
+        else
+        {
+            logs = null;
+        }
+    }
+
+    @* private MessagesClient client = new(); *@
+
+    private MessageSummary[]? logs;
+
+    protected override void OnInitialized()
+    {
+        logs = Client.GetMessages();
+    }
+}
+

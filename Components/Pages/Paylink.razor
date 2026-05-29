@@ -1,0 +1,86 @@
+﻿@page "/paylink"
+@using Clients
+@using Services
+@inject PaylinkService paylinkService
+@inject IJSRuntime JS
+@rendermode @(new InteractiveServerRenderMode(prerender: false)) // otherwise OnInitialized is called two times
+
+<PageTitle>Paylink</PageTitle>
+
+<p class="mb-3">
+    <button class="btn btn-primary" @onclick="AddLog">
+        Add log
+    </button>
+</p>
+
+<div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
+    <div class="btn-group me-2" role="group" aria-label="First group">
+        <button type="button" class="btn btn-outline-secondary">1</button>
+        <button type="button" class="btn btn-outline-secondary">2</button>
+        <button type="button" class="btn btn-outline-secondary">3</button>
+        <button type="button" class="btn btn-outline-secondary">4</button>
+    </div>
+    <div class="input-group">
+        <div class="input-group-text" id="btnGroupAddon"> </div>
+        <input type="text" class="form-control" placeholder="Input group example" aria-label="Input group example"
+               aria-describedby="btnGroupAddon">
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Logs
+    </div>
+
+    <div class="card-body p-2">
+        <div @ref="logContainer" class="log-container overflow-auto"
+             style="height: 300px; background:#111; color:#0f0; font-family:monospace;">
+
+            @foreach (var log in Logs)
+            {
+                <div>@log</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    private ElementReference logContainer;
+    private bool shouldScroll;
+
+    private List<string> Logs = new();
+
+    public static string GenerateRandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, length)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    private void AddLog()
+    {
+        var x = DateTime.Now.Second % 30;
+        Logs.Add($"{DateTime.Now:HH:mm:ss} {GenerateRandomString(x)}");
+        @* InvokeAsync(StateHasChanged); *@
+        shouldScroll = true;
+    }
+
+    protected override void OnInitialized()
+    {
+        AddLog();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shouldScroll)
+        {
+            shouldScroll = false;
+
+            await JS.InvokeVoidAsync(
+                "scrollToBottom",
+                logContainer);
+        }
+    }
+}

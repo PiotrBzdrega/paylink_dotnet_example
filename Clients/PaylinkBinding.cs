@@ -1,0 +1,68 @@
+using System;
+using System.Runtime.InteropServices;
+
+namespace BlazorEmpty.Clients;
+
+public class PaylinkBinding
+{
+
+    // Define the callback delegate (must match C++ signature)
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void BanknoteCallback(int overall_val, int banknote_val);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ErrorEventCallback(string msg);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void SignalChangeCallback(string view);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ButtonsChangeCallback(int state, int open_edge, int close_edge);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void CardDetectionCallback(string uid);
+
+    // Import C++ functions
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void createPaylinkSystem(string config_path);
+
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void destroyPaylinkSystem();
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern string getVersion();
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void setnewBanknoteCallback(BanknoteCallback func);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int setCardDetectedCallback(CardDetectionCallback func);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void setButtonsStateChangeCallback(ButtonsChangeCallback func);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void setSensorsStateChangeCallback(SignalChangeCallback func);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int dispenseCoins(int amount);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int getButtonsState();
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern string getSensorsState();
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void setLED(int number, bool on, int interval_ms);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void setMotor(bool on, int ms);
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int levelOfCoins();
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int currentCredit();
+}
