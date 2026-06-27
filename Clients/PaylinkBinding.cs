@@ -8,30 +8,33 @@ public class PaylinkBinding
 
     // Define the callback delegate (must match C++ signature)
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void BanknoteCallback(int overall_val, int banknote_val);
+    public delegate void BanknoteCallback(int overall_val, int banknote_val, IntPtr user_data);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ErrorEventCallback(string msg);
+    public delegate void ErrorEventCallback(string msg, IntPtr user_data);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void SignalChangeCallback(string view);
+    public delegate void SignalChangeCallback(string view, IntPtr user_data);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void ButtonsChangeCallback(int state, int open_edge, int close_edge);
+    public delegate void ButtonsChangeCallback(int state, int open_edge, int close_edge, IntPtr user_data);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void CardDetectionCallback(string uid);
+    public delegate void CardDetectionCallback(string uid, IntPtr user_data);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void LoggerCallback(string msg, IntPtr user_data);
 
     // Import C++ functions
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
-    public static extern void createPaylinkSystem(string config_path);
+    public static extern void createPaylinkSystem(string config_path, IntPtr user_data);
 
 
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
     public static extern void destroyPaylinkSystem();
 
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
-    public static extern string getVersion();
+    public static extern IntPtr getVersion();
 
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
     public static extern void setnewBanknoteCallback(BanknoteCallback func);
@@ -52,7 +55,7 @@ public class PaylinkBinding
     public static extern int getButtonsState();
 
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
-    public static extern string getSensorsState();
+    public static extern IntPtr getSensorsState();
 
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
     public static extern void setLED(int number, bool on, int interval_ms);
@@ -65,4 +68,7 @@ public class PaylinkBinding
 
     [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
     public static extern int currentCredit();
+
+    [DllImport("libpaylink.so.0.3.0", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void freeString(IntPtr str);
 }

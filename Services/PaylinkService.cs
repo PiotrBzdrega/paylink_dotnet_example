@@ -11,13 +11,18 @@ public class PaylinkService
 
     public event Action? CreditChanged;
 
-    public void Initialize()
+    public void Initialize(IntPtr user_data)
     {
-        PaylinkBinding.createPaylinkSystem("/etc/paylink.conf");
+        PaylinkBinding.createPaylinkSystem("/etc/paylink.conf", user_data);
 
         callback = OnBanknote;
 
         PaylinkBinding.setnewBanknoteCallback(callback);
+    }
+
+    public void Terminate()
+    {
+        PaylinkBinding.destroyPaylinkSystem();
     }
 
     private void OnBanknote(int overall, int banknote)

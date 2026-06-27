@@ -13,18 +13,78 @@
     </button>
 </p>
 
-<div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
-    <div class="btn-group me-2" role="group" aria-label="First group">
-        <button type="button" class="btn btn-outline-secondary">1</button>
-        <button type="button" class="btn btn-outline-secondary">2</button>
-        <button type="button" class="btn btn-outline-secondary">3</button>
-        <button type="button" class="btn btn-outline-secondary">4</button>
-    </div>
-    <div class="input-group">
-        <div class="input-group-text" id="btnGroupAddon"> </div>
-        <input type="text" class="form-control" placeholder="Input group example" aria-label="Input group example"
-               aria-describedby="btnGroupAddon">
-    </div>
+<div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Actions
+    </button>
+
+    <ul class="dropdown-menu">
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                getVersion()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                dispenseCoins(100)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                dispenseCoins(200)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                setMotor(true, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                setMotor(false, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                setMotor(true, 3000)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                setLED(1, true, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                setLED(1, false, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                setLED(1, true, 1000)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                levelOfCoins()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                currentCredit()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                getSensorsState()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="AddLog">
+                getButtonsState()
+            </button>
+        </li>
+    </ul>
 </div>
 
 <div class="card">
@@ -65,6 +125,16 @@
         Logs.Add($"{DateTime.Now:HH:mm:ss} {GenerateRandomString(x)}");
         @* InvokeAsync(StateHasChanged); *@
         shouldScroll = true;
+    }
+
+    private void startPaylink()
+    {
+        paylinkService.Initialize();
+    }
+
+    private void stopPaylink()
+    {
+        paylinkService.Terminate();
     }
 
     protected override void OnInitialized()
