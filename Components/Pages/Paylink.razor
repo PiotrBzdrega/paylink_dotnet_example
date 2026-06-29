@@ -1,17 +1,10 @@
 ﻿@page "/paylink"
 @using Clients
-@using Services
-@inject PaylinkService paylinkService
+@using System.Runtime.InteropServices;
 @inject IJSRuntime JS
 @rendermode @(new InteractiveServerRenderMode(prerender: false)) // otherwise OnInitialized is called two times
 
 <PageTitle>Paylink</PageTitle>
-
-<p class="mb-3">
-    <button class="btn btn-primary" @onclick="AddLog">
-        Add log
-    </button>
-</p>
 
 <div class="dropdown">
     <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -20,67 +13,77 @@
 
     <ul class="dropdown-menu">
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="startPaylink">
+                startPaylink()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="stopPaylink">
+                stopPaylink()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="getVersion">
                 getVersion()
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => dispenseCoins(100)">
                 dispenseCoins(100)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => dispenseCoins(200)">
                 dispenseCoins(200)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => setMotor(true, 0)">
                 setMotor(true, 0)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => setMotor(false, 0)">
                 setMotor(false, 0)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => setMotor(true, 3000)">
                 setMotor(true, 3000)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => setLed(1, true, 0)">
                 setLED(1, true, 0)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => setLed(1, false, 0)">
                 setLED(1, false, 0)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => setLed(1, true, 1000)">
                 setLED(1, true, 1000)
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => levelOfCoins()">
                 levelOfCoins()
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => currentCredit()">
                 currentCredit()
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => getSensorsState()">
                 getSensorsState()
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="AddLog">
+            <button class="dropdown-item" @onclick="() => getButtonsState()">
                 getButtonsState()
             </button>
         </li>
@@ -109,6 +112,16 @@
     private ElementReference logContainer;
     private bool shouldScroll;
 
+    private PaylinkBinding.LoggerCallback _logCallback;
+    private PaylinkBinding.BanknoteCallback _banknoteCallback;
+
+    private PaylinkBinding.ButtonsChangeCallback _buttonsChangeCallback;
+
+    private PaylinkBinding.SignalChangeCallback _signalChangeCallback;
+
+    private PaylinkBinding.CardDetectionCallback _cardDetectionCallback;
+
+
     private List<string> Logs = new();
 
     public static string GenerateRandomString(int length)
@@ -119,27 +132,155 @@
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-    private void AddLog()
+    private void LogCallback(IntPtr message, IntPtr user_data)
     {
-        var x = DateTime.Now.Second % 30;
-        Logs.Add($"{DateTime.Now:HH:mm:ss} {GenerateRandomString(x)}");
-        @* InvokeAsync(StateHasChanged); *@
-        shouldScroll = true;
+        _ = InvokeAsync(() =>
+        {
+            string s = Marshal.PtrToStringUTF8(message)!;
+            Logs.Add($"[Paylink] {s}");
+            shouldScroll = true;
+            StateHasChanged();
+        });
+    }
+
+    private void BanknoteCallback(int overall_val, int banknote_val, IntPtr user_data)
+    {
+        _ = InvokeAsync(() =>
+        {
+            Logs.Add($"[BanknoteCallback] Overall Value: {overall_val}, Banknote Value: {banknote_val}");
+            shouldScroll = true;
+            StateHasChanged();
+        });
+    }
+
+    private void ButtonsChangeCallback(int state, int open_edge, int close_edge, IntPtr user_data)
+    {
+        _ = InvokeAsync(() =>
+        {
+            Logs.Add($"[ButtonsChangeCallback] State: {state}, Open Edge: {open_edge}, Close Edge: {close_edge}");
+            shouldScroll = true;
+            StateHasChanged();
+        });
+    }
+
+    private void SignalChangeCallback(IntPtr view, IntPtr user_data)
+    {
+        _ = InvokeAsync(() =>
+        {
+            string v = Marshal.PtrToStringUTF8(view)!;
+            Logs.Add($"[SignalChangeCallback] Signal: {v}");
+            shouldScroll = true;
+            StateHasChanged();
+        });
+    }
+
+
+
+    private void CardDetectionCallback(IntPtr uid, IntPtr user_data)
+    {
+        _ = InvokeAsync(() =>
+        {
+            string s = Marshal.PtrToStringUTF8(uid)!;
+            Logs.Add($"[CardDetectionCallback] Card Detected: {s}");
+            shouldScroll = true;
+            StateHasChanged();
+        });
+
     }
 
     private void startPaylink()
     {
-        paylinkService.Initialize();
+        PaylinkBinding.createPaylinkSystem("/home/dev/Sources/BlazorEmpty/paylink-config.yaml", _logCallback, IntPtr.Zero);
+        PaylinkBinding.setnewBanknoteCallbackCtx(_banknoteCallback, IntPtr.Zero);
+        PaylinkBinding.setCardDetectedCallbackCtx(_cardDetectionCallback, IntPtr.Zero);
+        PaylinkBinding.setButtonsStateChangeCallbackCtx(_buttonsChangeCallback, IntPtr.Zero);
+        PaylinkBinding.setSensorsStateChangeCallbackCtx(_signalChangeCallback, IntPtr.Zero);
     }
 
     private void stopPaylink()
     {
-        paylinkService.Terminate();
+        PaylinkBinding.destroyPaylinkSystem();
+    }
+
+    private void getVersion()
+    {
+        using NativeStringHandle versionHandle = PaylinkBinding.getVersion();
+        var version = versionHandle.GetString();
+        Logs.Add($"[App] Version: {version}");
+        shouldScroll = true;
+    }
+
+    private void setBanknoteCallback(PaylinkBinding.BanknoteCallback cb, IntPtr user_data)
+    {
+        PaylinkBinding.setnewBanknoteCallbackCtx(cb, user_data);
+    }
+
+    private void setCardDetectedCallback(PaylinkBinding.CardDetectionCallback cb, IntPtr user_data)
+    {
+        PaylinkBinding.setCardDetectedCallbackCtx(cb, user_data);
+    }
+
+    private void setButtonsStateChangeCallback(PaylinkBinding.ButtonsChangeCallback cb, IntPtr user_data)
+    {
+        PaylinkBinding.setButtonsStateChangeCallbackCtx(cb, user_data);
+    }
+
+    private void setSensorsStateChangeCallback(PaylinkBinding.SignalChangeCallback cb, IntPtr user_data)
+    {
+        PaylinkBinding.setSensorsStateChangeCallbackCtx(cb, user_data);
+    }
+
+    private void dispenseCoins(int coins)
+    {
+        PaylinkBinding.dispenseCoins(coins);
+    }
+
+    private void getButtonsState()
+    {
+        var buttonsState = PaylinkBinding.getButtonsState();
+        Logs.Add($"[App] Buttons State: {buttonsState}");
+        shouldScroll = true;
+    }
+
+    private void getSensorsState()
+    {
+        using NativeStringHandle sensorsHandle = PaylinkBinding.getSensorsState();
+        var sensorsState = sensorsHandle.GetString();
+        Logs.Add($"[App] Sensors State: {sensorsState}");
+        shouldScroll = true;
+    }
+
+    private void setLed(int number, bool on, int interval_ms)
+    {
+        PaylinkBinding.setLED(number, on, interval_ms);
+    }
+
+    private void setMotor(bool state, int duration)
+    {
+        PaylinkBinding.setMotor(state, duration);
+    }
+
+    private void levelOfCoins()
+    {
+        var level = PaylinkBinding.levelOfCoins();
+        Logs.Add($"[App] Level of Coins: {level}");
+        shouldScroll = true;
+    }
+
+    private void currentCredit()
+    {
+        var credit = PaylinkBinding.currentCredit();
+        Logs.Add($"[App] Current Credit: {credit}");
+        shouldScroll = true;
     }
 
     protected override void OnInitialized()
     {
-        AddLog();
+        _logCallback = LogCallback;
+        _banknoteCallback = BanknoteCallback;
+        _buttonsChangeCallback = ButtonsChangeCallback;
+        _signalChangeCallback = SignalChangeCallback;
+        _cardDetectionCallback = CardDetectionCallback;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

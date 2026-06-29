@@ -1,6 +1,6 @@
 using BlazorEmpty.Clients;
 using BlazorEmpty.Components;
-using BlazorEmpty.Services;
+// using BlazorEmpty.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +10,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddBootstrapBlazor();
 builder.Services.AddSingleton<MessagesClient>();
 builder.Services.AddSingleton<LevelClient>();
-builder.Services.AddSingleton<PaylinkService>();
+// builder.Services.AddSingleton<PaylinkService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
