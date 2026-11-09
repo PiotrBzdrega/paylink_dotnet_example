@@ -7,6 +7,6 @@ stdout = false
 [module]
 # DISABLED, STUB, ENABLED
 pn532 = "DISABLED"
-stm = "DISABLED"
+# stm = "DISABLED"
 acceptor = "STUB"
 

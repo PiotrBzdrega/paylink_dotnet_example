@@ -1,4 +1,4 @@
-﻿@page "/paylink"
+﻿@page "/"
 @using Clients
 @using System.Runtime.InteropServices;
 @inject IJSRuntime JS
@@ -78,8 +78,48 @@
             </button>
         </li>
         <li>
-            <button class="dropdown-item" @onclick="() => getSensorsState()">
-                getSensorsState()
+            <button class="dropdown-item" @onclick="() => getMainSensor()">
+                getMainSensor()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => getLastDropSensor()">
+                getLastDropSensor()
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setSensorLed(1, 4095, 0, 0)">
+                setSensorLed(1, 4095, 0, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setSensorLed(1, 0, 4095, 0)">
+                setSensorLed(1, 0, 4095, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setSensorLed(1, 0, 0, 4095)">
+                setSensorLed(1, 0, 0, 4095)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setAllSensorLed(4095, 0, 0)">
+                setAllSensorLed(4095, 0, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setAllSensorLed(0, 4095, 0)">
+                setAllSensorLed(0, 4095, 0)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setAllSensorLed(0, 0, 4095)">
+                setAllSensorLed(0, 0, 4095)
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" @onclick="() => setAllSensorLed(0, 0, 0)">
+                setAllSensorLed(0, 0, 0)
             </button>
         </li>
         <li>
@@ -117,7 +157,8 @@
 
     private PaylinkBinding.ButtonsChangeCallback _buttonsChangeCallback;
 
-    private PaylinkBinding.SignalChangeCallback _signalChangeCallback;
+    private PaylinkBinding.MainSensorChangeCallback _mainSensorChangeCallback;
+    private PaylinkBinding.DropSensorChangeCallback _dropSensorChangeCallback;
 
     private PaylinkBinding.CardDetectionCallback _cardDetectionCallback;
 
@@ -134,9 +175,9 @@
 
     private void LogCallback(IntPtr message, IntPtr user_data)
     {
+        string s = Marshal.PtrToStringUTF8(message)!;
         _ = InvokeAsync(() =>
         {
-            string s = Marshal.PtrToStringUTF8(message)!;
             Logs.Add($"[Paylink] {s}");
             shouldScroll = true;
             StateHasChanged();
@@ -163,24 +204,31 @@
         });
     }
 
-    private void SignalChangeCallback(IntPtr view, IntPtr user_data)
+    private void DropSensorChangeCallback(int sensor, IntPtr user_data)
     {
         _ = InvokeAsync(() =>
         {
-            string v = Marshal.PtrToStringUTF8(view)!;
-            Logs.Add($"[SignalChangeCallback] Signal: {v}");
+            Logs.Add($"[DropSensorChangeCallback] Signal: {sensor}");
             shouldScroll = true;
             StateHasChanged();
         });
     }
 
-
-
-    private void CardDetectionCallback(IntPtr uid, IntPtr user_data)
+    private void MainSensorChangeCallback(bool state, IntPtr user_data)
     {
         _ = InvokeAsync(() =>
         {
-            string s = Marshal.PtrToStringUTF8(uid)!;
+            Logs.Add($"[MainSensorChangeCallback] Signal: {state}");
+            shouldScroll = true;
+            StateHasChanged();
+        });
+    }
+
+    private void CardDetectionCallback(IntPtr uid, IntPtr user_data)
+    {
+        string s = Marshal.PtrToStringUTF8(uid)!;
+        _ = InvokeAsync(() =>
+        {
             Logs.Add($"[CardDetectionCallback] Card Detected: {s}");
             shouldScroll = true;
             StateHasChanged();
@@ -194,7 +242,8 @@
         PaylinkBinding.setnewBanknoteCallbackCtx(_banknoteCallback, IntPtr.Zero);
         PaylinkBinding.setCardDetectedCallbackCtx(_cardDetectionCallback, IntPtr.Zero);
         PaylinkBinding.setButtonsStateChangeCallbackCtx(_buttonsChangeCallback, IntPtr.Zero);
-        PaylinkBinding.setSensorsStateChangeCallbackCtx(_signalChangeCallback, IntPtr.Zero);
+        PaylinkBinding.setMainSensorChangeCallbackCtx(_mainSensorChangeCallback, IntPtr.Zero);
+        PaylinkBinding.setDropSensorChangeCallbackCtx(_dropSensorChangeCallback, IntPtr.Zero);
     }
 
     private void stopPaylink()
@@ -225,9 +274,14 @@
         PaylinkBinding.setButtonsStateChangeCallbackCtx(cb, user_data);
     }
 
-    private void setSensorsStateChangeCallback(PaylinkBinding.SignalChangeCallback cb, IntPtr user_data)
+    private void setDropSensorStateChangeCallback(PaylinkBinding.DropSensorChangeCallback cb, IntPtr user_data)
     {
-        PaylinkBinding.setSensorsStateChangeCallbackCtx(cb, user_data);
+        PaylinkBinding.setDropSensorChangeCallbackCtx(cb, user_data);
+    }
+
+    private void setMainSensorStateChangeCallback(PaylinkBinding.MainSensorChangeCallback cb, IntPtr user_data)
+    {
+        PaylinkBinding.setMainSensorChangeCallbackCtx(cb, user_data);
     }
 
     private void dispenseCoins(int coins)
@@ -242,12 +296,28 @@
         shouldScroll = true;
     }
 
-    private void getSensorsState()
+    private void getMainSensor()
     {
-        using NativeStringHandle sensorsHandle = PaylinkBinding.getSensorsState();
-        var sensorsState = sensorsHandle.GetString();
-        Logs.Add($"[App] Sensors State: {sensorsState}");
+        var sensor = PaylinkBinding.getMainSensor();
+        Logs.Add($"[App] Last Main Sensor State: {sensor}");
         shouldScroll = true;
+    }
+
+    private void getLastDropSensor()
+    {
+        var sensor = PaylinkBinding.getLastDropSensor();
+        Logs.Add($"[App] Last Drop Sensor State: {sensor}");
+        shouldScroll = true;
+    }
+
+    private void setSensorLed(ushort number, ushort red, ushort green, ushort blue)
+    {
+        PaylinkBinding.setSensorLed(number, red, green, blue);
+    }
+
+    private void setAllSensorLed(ushort red, ushort green, ushort blue)
+    {
+        setSensorLed(0, red, green, blue);
     }
 
     private void setLed(int number, bool on, int interval_ms)
@@ -262,7 +332,7 @@
 
     private void levelOfCoins()
     {
-        var level = PaylinkBinding.levelOfCoins();
+        NativeStringHandle? level = PaylinkBinding.levelOfCoins();
         Logs.Add($"[App] Level of Coins: {level}");
         shouldScroll = true;
     }
@@ -279,7 +349,8 @@
         _logCallback = LogCallback;
         _banknoteCallback = BanknoteCallback;
         _buttonsChangeCallback = ButtonsChangeCallback;
-        _signalChangeCallback = SignalChangeCallback;
+        _dropSensorChangeCallback = DropSensorChangeCallback;
+        _mainSensorChangeCallback = MainSensorChangeCallback;
         _cardDetectionCallback = CardDetectionCallback;
     }
 
@@ -294,4 +365,6 @@
                 logContainer);
         }
     }
+
+
 }
